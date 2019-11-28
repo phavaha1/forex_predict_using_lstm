@@ -12,7 +12,7 @@ import pandas as pd
 # load data
 dataset = pd.read_csv('/content/drive/My Drive/data/forex/HISTDATA_COM_MT_EURUSD_M12012/DAT_MT_EURUSD_M1_2012.csv', header=None, names=['date','hour','open','high','low','close','volume'])
 
-minimized_ds = dataset.loc[dataset['hour'].isin(['00:00','06:00','12:00','18:00'])]
+minimized_ds = dataset.loc[dataset['hour'].str[-2:].isin(['00'])]
 
 all_values = minimized_ds.iloc[:,2:3].values
 
