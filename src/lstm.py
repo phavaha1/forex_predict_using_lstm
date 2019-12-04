@@ -124,7 +124,7 @@ class LstmModel:
 
 def create_and_train_model(training_data):
     lstm = LstmModel(training_data)
-    lstm.train_model(1, 40)
+    lstm.train_model(30, 20)
     return lstm
 
 
