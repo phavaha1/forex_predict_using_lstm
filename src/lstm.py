@@ -12,19 +12,18 @@ Original file is located at
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
-from keras.layers import Dropout
-from keras.layers import LSTM
-from keras.layers import Dense
-from keras.models import Sequential
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import LSTM
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.models import Sequential
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import joblib
+import os
 
-
-PATH = '/content/drive/My Drive/data/forex/HISTDATA_COM_MT_EURUSD_M12012/DAT_MT_EURUSD_M1_2012.csv'
+DATA_PATH = os.environ.get('DATA_PATH', '../data/DAT_MT_EURUSD_M1_2012.csv')
 TIME_STEP = 40
 
 
@@ -54,7 +53,7 @@ class LstmModel:
 
     def create_structured_training_set(self):
         """
-        Creating a data structure with timesteps and 1 output
+        Creating a data structure with size TIME_STEP and 4 output
         """
         scaled_training_data = self.sc.fit_transform(self.training_data)
         X_train = []
@@ -68,6 +67,9 @@ class LstmModel:
         return X_train, y_train
 
     def create_structured_test_set(self):
+        """
+        Creating a data structure with TIME_STEP and 4 output
+        """
         inputs = np.concatenate(
             (self.training_data[-(TIME_STEP):], self.test_data))
         scaled_inputs = self.sc.transform(inputs)
@@ -111,16 +113,18 @@ class LstmModel:
         self.model.fit(X_train, y_train,
                        epochs=epochs, batch_size=batch_size)
 
-    def predict(self, X_test):
+    def predict(self):
+        X_test = self.create_structured_test_set()
+
         predicted_stock_price = self.model.predict(X_test)
         predicted_stock_price = self.sc.inverse_transform(
             predicted_stock_price)
         return predicted_stock_price
 
 
-def create_and_train_model(training_data, test_data):
-    lstm = LstmModel(training_data, test_data)
-    lstm.train_model(40, 20)
+def create_and_train_model(training_data):
+    lstm = LstmModel(training_data)
+    lstm.train_model(1, 40)
     return lstm
 
 
@@ -190,12 +194,21 @@ def analysis_performance(actual, predict):
 
 def main():
     # create the training set and test set
-    training_data, test_data = prepare_data(PATH)
+    training_data, test_data = prepare_data(DATA_PATH)
 
     # Feature Scaling
-    lstm = create_and_train_model(training_data, test_data)
-    joblib.dump(lstm, 'lstm_model.pkl', compress=9)
+    lstm = create_and_train_model(training_data)
+
+    # Save model to local file
+    lstm.model.save('lstm_model.h5')
+
+    # Predict price:
+    lstm.set_test_data(test_data)
+    predicted_price = lstm.predict()
+
+    visualizing(test_data, predicted_price)
 
 
 if __name__ == '__main__':
     main()
+    print('sucessfully trained model')
