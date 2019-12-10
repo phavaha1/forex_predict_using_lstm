@@ -1,9 +1,9 @@
 import requests
 from abc import ABC, abstractmethod
-
+import json
 
 BASE_URL = ''
-BASE_STREAM_URL = ''
+BASE_STREAM_URL = 'https://stream-fxpractice.oanda.com'
 
 
 class Oanda:
@@ -18,13 +18,17 @@ class Oanda:
         self.account_id = account_id
 
     def get_stream_price(self):
-        it = requests.get(BASE_STREAM_URL + '/v3/accounts/' +
-                          self.account_id + '/pricing',
-                          params={'instruments': 'USD_JPY'},
-                          headers='Authorization: Bearer ' + self.access_token,
+        url = BASE_STREAM_URL + '/v3/accounts/' + \
+            self.account_id + '/pricing/stream'
+        it = requests.get(url,
+                          params={'instruments': 'USD_JPY', 'snapshot': True},
+                          headers={'Authorization': 'Bearer ' +
+                                   self.access_token},
                           stream=True)
         for line in it.iter_lines():
-            print(line)
+            if line:
+                decoded_line = line.decode('utf-8')
+                print(json.loads(decoded_line))
 
 
 oanda_api = Oanda(
